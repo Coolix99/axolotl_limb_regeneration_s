@@ -1,37 +1,27 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import t
+from scipy.stats import linregress, t
 
-# Load data
 def get_data():
-    df = pd.read_csv('statistical_analysis/axolot_data.csv')
-    selected_columns = df[[
-        "Exact animal size (snout to tail), cm",
-        "Blastema size, um",
-        "x0(Shh), um",
-        "x0(Fgf8), um",
-        "Volume^1/3(Shh), um",
-        "Volume^1/3(Fgf8), um",
-        "Volume^1/3(Dusp), um"
-    ]]
-    cleaned_df = selected_columns.dropna()
-    return cleaned_df
+    return pd.read_csv('statistical_analysis/results_from_image_analysis_figure_4_blastema_width_from_3d.csv')
 
 def compute_eta(X, Y, Z):
-    beta_XZ = np.polyfit(Z, X, 1)
-    eps_X = X - (beta_XZ[0] * Z + beta_XZ[1])
+    slope_XZ, intercept_XZ, *_ = linregress(Z, X)
+    eps_X = X - (slope_XZ * Z + intercept_XZ)
 
-    beta_YZ = np.polyfit(Z, Y, 1)
-    eps_Y = Y - (beta_YZ[0] * Z + beta_YZ[1])
+    slope_YZ, intercept_YZ, *_ = linregress(Z, Y)
+    eps_Y = Y - (slope_YZ * Z + intercept_YZ)
 
-    beta_eps = np.polyfit(eps_Y, eps_X, 1)
-    pred_eps_X = beta_eps[0] * eps_Y + beta_eps[1]
+    slope_eps, intercept_eps, *_ = linregress(eps_Y, eps_X)
+    pred_eps_X = slope_eps * eps_Y + intercept_eps
     eps_final = eps_X - pred_eps_X
 
     eta2 = 1 - np.sum(eps_final**2) / np.sum(eps_X**2)
 
-    r = np.corrcoef(eps_Y, eps_X)[0, 1]
+    r = (np.corrcoef(X, Y)[0, 1] - np.corrcoef(X, Z)[0, 1] * np.corrcoef(Y, Z)[0, 1]) / \
+        np.sqrt((1 - np.corrcoef(X, Z)[0, 1]**2) * (1 - np.corrcoef(Y, Z)[0, 1]**2))
+
     n = len(X)
     t_stat = np.sqrt(n - 3) * r / np.sqrt(1 - r**2)
     p_val = 2 * (1 - t.cdf(np.abs(t_stat), df=n - 3))
@@ -39,20 +29,22 @@ def compute_eta(X, Y, Z):
     return eta2, p_val
 
 def analyze_scaling(df):
-    Y = df["Exact animal size (snout to tail), cm"].values
-    Z = df["Blastema size, um"].values
-
     results = {}
     targets = [
-        "x0(Shh), um",
-        "x0(Fgf8), um",
         "Volume^1/3(Shh), um",
+        "x0(Shh), um",
         "Volume^1/3(Fgf8), um",
+        "x0(Fgf8), um",
         "Volume^1/3(Dusp), um"
     ]
 
     for X_col in targets:
-        X = df[X_col].values
+        # Drop NaNs only for this target and shared variables
+        sub_df = df[["Exact animal size (snout to tail), cm", "Blastema width, um", X_col]].dropna()
+        Y = sub_df["Exact animal size (snout to tail), cm"].values
+        Z = sub_df["Blastema width, um"].values
+        X = sub_df[X_col].values
+
         eta_dyn, p_dyn = compute_eta(X, Y, Z)
         eta_stat, p_stat = compute_eta(X, Z, Y)
 
@@ -65,7 +57,19 @@ def analyze_scaling(df):
 
     return results
 
-def plot_eta(results):
+def get_significance_label(p):
+    if p < 0.001:
+        return "****"
+    elif p < 0.005:
+        return "***"
+    elif p < 0.01:
+        return "**"
+    elif p < 0.05:
+        return "*"
+    else:
+        return "n.s."
+
+def plot_eta(results, font_size=14):
     params = list(results.keys())
     fig, axes = plt.subplots(len(params), 1, figsize=(8, 2.5 * len(params)))
 
@@ -79,8 +83,8 @@ def plot_eta(results):
         p_stat = results[param]['p_stat']
 
         print(f"Parameter: {param}")
-        print(f"Dynamic scaling (η²): {eta_dyn:.3f}, p-value: {p_dyn:.3f}")
-        print(f"Static scaling (η²): {eta_stat:.3f}, p-value: {p_stat:.3f}")
+        print(f"Dynamic scaling (η²): {eta_dyn:.4f}, p-value: {p_dyn:.4f}")
+        print(f"Static scaling (η²): {eta_stat:.4f}, p-value: {p_stat:.4f}")
         print()
 
         ax = axes[i]
@@ -92,10 +96,15 @@ def plot_eta(results):
         ax.barh(0.5, width=split, left=0, height=0.4, color="#c7f0fc")
         ax.barh(0.5, width=1 - split, left=split, height=0.4, color="#ecf6e1")
 
-        if p_dyn < 0.05:
-            ax.text(split / 2, 0.5, '*', ha='center', va='center', fontsize=14)
-        if p_stat < 0.05:
-            ax.text(split + (1 - split) / 2, 0.5, '*', ha='center', va='center', fontsize=14)
+        label_dyn = get_significance_label(p_dyn)
+        label_stat = get_significance_label(p_stat)
+
+        if label_dyn:
+            pos = max(split / 2, 0.03)
+            ax.text(pos, 0.5, label_dyn, ha='center', va='center', fontsize=font_size)
+        if label_stat:
+            pos = min(split + (1 - split) / 2, 0.97)
+            ax.text(pos, 0.5, label_stat, ha='center', va='center', fontsize=font_size)
 
         ax.set_yticks([])
         ax.set_title(param)
@@ -104,7 +113,45 @@ def plot_eta(results):
     plt.tight_layout()
     plt.show()
 
+def save_eta_svgs(results, font_size=14):
+    import os
+    os.makedirs('statistical_analysis/fig', exist_ok=True)
+
+    for param, res in results.items():
+        eta_dyn = res['eta_dyn']
+        eta_stat = res['eta_stat']
+        p_dyn = res['p_dyn']
+        p_stat = res['p_stat']
+
+        split = eta_dyn / (eta_dyn + eta_stat) if (eta_dyn + eta_stat) > 0 else 0.5
+
+        fig, ax = plt.subplots(figsize=(4, 1))
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        ax.barh(0.5, width=split, left=0, height=0.4, color="#c7f0fc")
+        ax.barh(0.5, width=1 - split, left=split, height=0.4, color="#ecf6e1")
+
+        label_dyn = get_significance_label(p_dyn)
+        label_stat = get_significance_label(p_stat)
+
+        if label_dyn:
+            pos = max(split / 2, 0.03)
+            ax.text(pos, 0.5, label_dyn, ha='center', va='center', fontsize=font_size)
+        if label_stat:
+            pos = min(split + (1 - split) / 2, 0.97)
+            ax.text(pos, 0.5, label_stat, ha='center', va='center', fontsize=font_size)
+
+        ax.axis('off')
+        plt.tight_layout()
+
+        filename = f"eta_plot_{param.replace('/', '_').replace(' ', '_').replace('(', '').replace(')', '').replace(',', '')}.svg"
+        plt.savefig('statistical_analysis/fig/' + filename, format='svg', bbox_inches='tight')
+        plt.close()
+
 if __name__ == '__main__':
     df = get_data()
+    print(df)
     results = analyze_scaling(df)
-    plot_eta(results)
+    plot_eta(results, font_size=14)
+    save_eta_svgs(results, font_size=14)
