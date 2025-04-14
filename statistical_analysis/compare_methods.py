@@ -1,3 +1,8 @@
+###################
+#ATTENTION: This code shows equivalence in case of two sided test
+###################
+
+
 import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt

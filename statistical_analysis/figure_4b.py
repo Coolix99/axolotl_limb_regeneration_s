@@ -21,10 +21,11 @@ def compute_eta(X, Y, Z):
 
     r = (np.corrcoef(X, Y)[0, 1] - np.corrcoef(X, Z)[0, 1] * np.corrcoef(Y, Z)[0, 1]) / \
         np.sqrt((1 - np.corrcoef(X, Z)[0, 1]**2) * (1 - np.corrcoef(Y, Z)[0, 1]**2))
-
+    print(f"r: {r}")
     n = len(X)
     t_stat = np.sqrt(n - 3) * r / np.sqrt(1 - r**2)
-    p_val = 2 * (1 - t.cdf(np.abs(t_stat), df=n - 3))
+    p_val =  (1 - t.cdf(np.abs(t_stat), df=n - 3)) *2 #two sided
+    p_val =  (1 - t.cdf(t_stat, df=n - 3)) #one sided
 
     return eta2, p_val
 
@@ -59,8 +60,6 @@ def analyze_scaling(df):
 
 def get_significance_label(p):
     if p < 0.001:
-        return "****"
-    elif p < 0.005:
         return "***"
     elif p < 0.01:
         return "**"
