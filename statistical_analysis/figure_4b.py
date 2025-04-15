@@ -46,8 +46,8 @@ def analyze_scaling(df):
         Z = sub_df["Blastema width, um"].values
         X = sub_df[X_col].values
 
-        eta_dyn, p_dyn = compute_eta(X, Y, Z)
-        eta_stat, p_stat = compute_eta(X, Z, Y)
+        eta_stat, p_stat = compute_eta(X, Y, Z)
+        eta_dyn, p_dyn = compute_eta(X, Z, Y)
 
         results[X_col] = {
             'eta_dyn': eta_dyn,
