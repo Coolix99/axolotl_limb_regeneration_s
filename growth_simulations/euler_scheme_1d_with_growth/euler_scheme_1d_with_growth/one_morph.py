@@ -2,7 +2,7 @@ import cupy as np
 import math
 from tqdm import tqdm
 import os
-from euler_scheme_1d_with_growth.analytical_solutions import steady_solution, nrect
+from euler_scheme_1d_with_growth.analytical_solutions import steady_solution, nrect, steady_absorbing, steady_open
 from euler_scheme_1d_with_growth.functions_for_numerics import *
 # GROWTH RULE
 from euler_scheme_1d_with_growth.growth_rules import one_morph_growth_rule as growth_rule
@@ -12,11 +12,67 @@ def threshold_vs_Lfinal(Lfinal, x0, lam, alpha, w, beta, D):
         return max(steady_solution( np.linspace(0, Lfinal, 1000), x0, lam, alpha, w, beta, D, Lfinal ))
     else:
         return np.nan
+    
+def threshold_vs_Lfinal_absorbing(Lfinal, x0, lam, alpha, w, beta, D):
+    if Lfinal > x0 + w:
+        #print(steady_absorbing( np.linspace(0, Lfinal, 1000), x0, lam, alpha, w, beta, D, Lfinal ))
+        return max(steady_absorbing( np.linspace(0, Lfinal, 1000), x0, lam, alpha, w, beta, D, Lfinal ))
+    else:
+        return np.nan
+
+def threshold_vs_Lfinal_open(Lfinal, x0, lam, alpha, w, beta, D):
+    if Lfinal > x0 + w:
+        return max(steady_open( np.linspace(0, Lfinal, 1000), x0, lam, alpha, w, beta, D, Lfinal ))
+    else:
+        return np.nan
 
 def Lfinal(threshold, x0, lam, alpha, w, beta, D):   
     def equation_to_solve(Lfinal):
         values = np.linspace(0, Lfinal, 1000)
         steady_values = steady_solution(values, x0, lam, alpha, w, beta, D, Lfinal)
+        return max(steady_values)
+
+    # Generate a list of possible Lfinal values
+    possible_Lfinal = np.linspace(0.1*(x0+w), (x0+w)*10, 1000)  # Adjust range and resolution as needed
+
+    # Find the Lfinal value whose result is closest to the threshold
+    best_Lfinal = None
+    smallest_diff = float('inf')
+    for Lfinal in possible_Lfinal:
+        result = equation_to_solve(Lfinal)
+        diff = abs(result - threshold)
+        if diff < smallest_diff:
+            smallest_diff = diff
+            best_Lfinal = Lfinal
+
+    return best_Lfinal
+
+def Lfinal_absorbing(threshold, x0, lam, alpha, w, beta, D):
+    def equation_to_solve(Lfinal):
+        values = np.linspace(0, Lfinal, 1000)
+        steady_values = steady_absorbing(values, x0, lam, alpha, w, beta, D, Lfinal)
+        return max(steady_values)
+
+    # Generate a list of possible Lfinal values
+    possible_Lfinal = np.linspace(0.1*(x0+w), (x0+w)*10, 1000)  # Adjust range and resolution as needed
+
+    # Find the Lfinal value whose result is closest to the threshold
+    best_Lfinal = None
+    smallest_diff = float('inf')
+    for Lfinal in possible_Lfinal:
+        result = equation_to_solve(Lfinal)
+        #print(f"Testing Lfinal: {Lfinal}, Result: {result}, Threshold: {threshold}")
+        diff = abs(result - threshold)
+        if diff < smallest_diff:
+            smallest_diff = diff
+            best_Lfinal = Lfinal
+
+    return best_Lfinal
+
+def Lfinal_open(threshold, x0, lam, alpha, w, beta, D):
+    def equation_to_solve(Lfinal):
+        values = np.linspace(0, Lfinal, 1000)
+        steady_values = steady_open(values, x0, lam, alpha, w, beta, D, Lfinal)
         return max(steady_values)
 
     # Generate a list of possible Lfinal values
