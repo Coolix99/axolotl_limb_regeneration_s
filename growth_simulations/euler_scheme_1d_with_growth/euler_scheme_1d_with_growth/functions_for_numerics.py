@@ -34,9 +34,9 @@ def laplacian_non_unif_grid(c, xcenters):
        - ( c - c_left )/( xcenters - xcenters_left ) ) 
     return laplacian
 
-def refl_bound(c):
-    c[2]  += c[1]
-    c[-3] += c[-2]
+def refl_bound(c,x_grid_prev_grid):
+    c[2]  += c[1]*np.sqrt(x_grid_prev_grid[1]/x_grid_prev_grid[2])
+    c[-3] += c[-2]*np.sqrt(x_grid_prev_grid[-2]/x_grid_prev_grid[-3])
     c[0], c[1], c[-1], c[-2] = 0, 0, 0, 0
     return c
 

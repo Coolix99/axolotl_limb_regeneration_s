@@ -105,6 +105,14 @@ class two_morph_euler:
         x_grid_prev = self.dx * np.ones(self.ndx)
         s_prev = self.s_steady.copy()
         f_prev = self.f_steady.copy()
+        s_prev[0] = 0
+        f_prev[0] = 0
+        s_prev[1] = 0
+        f_prev[1] = 0
+        s_prev[-1] = 0
+        f_prev[-1] = 0
+        s_prev[-2] = 0
+        f_prev[-2] = 0
         save_index = 1
 
         # flag showing that growth has stopped, while for the assumed models of growth has stopped it does not recover
@@ -137,8 +145,8 @@ class two_morph_euler:
             sn += self.dt * self.source_s(x_centers_prev_gr, self.x0, self.w, L)
             fn += self.dt * self.source_f(x_centers_prev_gr, self.x0, self.w, L)
 
-            sn = refl_bound(sn)
-            fn = refl_bound(fn)
+            sn = refl_bound(sn,x_grid_prev_gr)
+            fn = refl_bound(fn,x_grid_prev_gr)
 
             # Steady state at this L(t)
             s_steady = steady_solution(x_centers_prev_gr, self.x0, self.lam, self.alpha, self.w, self.beta, self.D, L)

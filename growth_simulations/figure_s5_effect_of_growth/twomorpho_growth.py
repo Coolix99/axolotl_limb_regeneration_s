@@ -5,44 +5,8 @@ import math
 import shutil
 import os
 
-from euler_scheme_1d_with_growth import two_morph
 
-
-def final_size_steady():
-   # Parameters
-    D     = 1
-    beta  = 1
-    alpha = 1
-    lam   = math.sqrt(D / beta)
-
-    x0    = 0.5 * lam
-    w     = 0.5 * lam
-    L0    = 1.8 * (x0 + w)
-
-    thresholds_to_test = np.linspace(0.15, 0.285, 5)
-    Lfinals = np.linspace(0, 4, 100)
-
-    thresholds = np.array([
-        two_morph.threshold_vs_Lfinal(Lfinal, x0, lam, alpha, w, beta, D) 
-        for Lfinal in Lfinals
-    ])
-
-    Lfinals_to_reach = np.array([
-        two_morph.Lfinal(threshold, x0, lam, alpha, w, beta, D) 
-        for threshold in thresholds_to_test
-    ])
-
-    plt.plot(thresholds * beta / alpha / w, Lfinals / lam, label="Threshold Curve")
-    plt.plot(thresholds_to_test * beta / alpha / w, Lfinals_to_reach / lam, '.', label="Test Points")
-    plt.hlines(L0, 0, 1, colors='gray', linestyles='dashed', label="Initial Size")
-    plt.xlabel(r'Threshold, $\Theta \beta / \alpha w$')
-    plt.ylabel(r'Final system size, $L^*/\lambda$')
-    plt.xlim(0, 2)
-    plt.ylim(0, 4)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+from euler_scheme_1d_with_growth import two_morph as two_morph
 
 def loop():
     # Parameters
@@ -54,8 +18,7 @@ def loop():
     x0    = 0.5 * lam
     w     = 0.5 * lam
     L0    = 1.8 * (x0 + w)
-
-    thresholds_to_test = np.linspace(0.15, 0.285, 5)
+    thresholds_to_test = np.array([0.18,0.2,0.22])
 
     small_number = 1e-6
 
@@ -67,10 +30,10 @@ def loop():
     t    = np.arange(0, tmax + small_number, dt)
     ndt  = len(t)
 
-    ndt_to_save = 1000
-    g_to_test = np.array([0.5, 1, 5]) * beta
+    ndt_to_save = min(1000,ndt)
+    g_to_test = np.array([0.5, 1, 2, 3.5, 5]) * beta
 
-    output_folder = 'results_of_numerics/two_morph/dynamics/'
+    output_folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph_gmultiplicative/dynamics/'
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
     os.makedirs(output_folder)
@@ -107,7 +70,7 @@ def loop():
             )
             simulation.run_simulation()
             simulation.save_results(folder_base=output_folder)
+            
 
 if __name__ == "__main__":
-    final_size_steady()
     loop()
