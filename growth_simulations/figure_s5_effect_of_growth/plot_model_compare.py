@@ -45,6 +45,14 @@ def simulate_dynamics(folder, thresholds_to_test, g_to_test):
         g: dict(zip(thresholds_to_test, np.zeros(len(thresholds_to_test))))
         for g in g_to_test
     }
+    t90_dict = {
+        g: dict(zip(thresholds_to_test, np.full(len(thresholds_to_test), np.nan)))
+        for g in g_to_test
+    }
+    t_reach_dict = {
+        g: dict(zip(thresholds_to_test, np.full(len(thresholds_to_test), np.nan)))
+        for g in g_to_test
+    }
     
     nrows = len(thresholds_to_test)
     fig, ax = plt.subplots(nrows, 1, figsize=(default_figsize["large"][0]/3, default_figsize["large"][1]), dpi=200, sharex=True, sharey=True)
@@ -56,7 +64,16 @@ def simulate_dynamics(folder, thresholds_to_test, g_to_test):
                     nfolder_path = os.path.join(folder, nfolder)
                     time_to_save = np.load(os.path.join(nfolder_path, 'time_to_save.npy'))
                     Lt = np.load(os.path.join(nfolder_path, 'Lt.npy'))
-                    Lfinal_simulated[ng][nth] = Lt[-1]
+                    Lfinal = Lt[-1]
+                    Lfinal_simulated[ng][nth] = Lfinal
+
+                    # Compute t90 (first time reaching 90% of final size)
+                    idx_90 = np.argmax(Lt >= 0.9 * Lfinal)
+                    t90_dict[ng][nth] = time_to_save[idx_90]
+
+                    # Compute t_reach (last time L reaches max size)
+                    idx_reach = np.where(Lt >= Lfinal)[0][0]
+                    t_reach_dict[ng][nth] = time_to_save[idx_reach]
 
             ax[j].plot(time_to_save, Lt, label=f'gL? = {ng}')
             ax[j].set_title(f'th = {np.round(nth, 2)}', fontsize=6)
@@ -68,7 +85,7 @@ def simulate_dynamics(folder, thresholds_to_test, g_to_test):
     plt.tight_layout()
     plt.show()
 
-    return Lfinal_simulated
+    return Lfinal_simulated,t90_dict, t_reach_dict
 
 
 def plot_Lfinal_comparison(thresholds, thresholds_to_test, Lfinals, Lfinals_to_reach, Lfinal_simulated, beta, alpha, w, lam, x0):
@@ -120,7 +137,7 @@ def main():
 
     folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph_gstatic/dynamics/'
     folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph_gmultiplicative/dynamics/'
-    #folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph/dynamics/'
+    folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph/dynamics/'
     file_path = os.path.join(folder, "parameters.txt")
 
     params = read_simulation_parameters(file_path)
@@ -145,7 +162,7 @@ def main():
         for threshold in thresholds_to_test
     ])
 
-    Lfinal_simulated = simulate_dynamics(folder, thresholds_to_test, g_to_test)
+    Lfinal_simulated,t90_dict, t_reach_dict = simulate_dynamics(folder, thresholds_to_test, g_to_test)
     plot_Lfinal_comparison(thresholds, thresholds_to_test, Lfinals, Lfinals_to_reach, Lfinal_simulated, beta, alpha, w, lam, x0)
     plot_ratio_simulated_to_expected(Lfinal_simulated, thresholds_to_test, g_to_test, Lfinals_to_reach)
 

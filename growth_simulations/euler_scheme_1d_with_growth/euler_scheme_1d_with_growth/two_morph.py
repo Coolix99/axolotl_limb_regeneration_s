@@ -127,35 +127,35 @@ class two_morph_euler:
                 # ideally, would need to re-mesh for an increasing bin size
                 
                 # instead stop growth, if growth region is down to less than 5 bins in size
-                if np.sum(growth_region) < 3:
+                if np.sum(growth_region) < 1:
                     growth_region = 0 * growth_region
                     growth_has_stopped = True
 
-            x_grid_prev_gr = x_grid_prev * (1 + self.g * self.dt * growth_region )
-            x_centers_prev_gr, x_edges_prev_gr = x_from_grid(x_grid_prev_gr)
-            L = x_edges_prev_gr[-3]
+                x_grid_prev_gr = x_grid_prev * (1 + self.g * self.dt * growth_region )
+                x_centers_prev_gr, x_edges_prev_gr = x_from_grid(x_grid_prev_gr)
+                L = x_edges_prev_gr[-3]
 
-            # Euler scheme for concentration
-            s_prev = s_prev * (x_grid_prev / x_grid_prev_gr)
-            f_prev = f_prev * (x_grid_prev / x_grid_prev_gr)
+                # Euler scheme for concentration
+                s_prev = s_prev * (x_grid_prev / x_grid_prev_gr)
+                f_prev = f_prev * (x_grid_prev / x_grid_prev_gr)
 
-            sn = self.D * laplacian_non_unif_grid(s_prev, x_centers_prev_gr) * self.dt + s_prev - self.beta * s_prev * self.dt
-            fn = self.D * laplacian_non_unif_grid(f_prev, x_centers_prev_gr) * self.dt + f_prev - self.beta * f_prev * self.dt
+                sn = self.D * laplacian_non_unif_grid(s_prev, x_centers_prev_gr) * self.dt + s_prev - self.beta * s_prev * self.dt
+                fn = self.D * laplacian_non_unif_grid(f_prev, x_centers_prev_gr) * self.dt + f_prev - self.beta * f_prev * self.dt
 
-            sn += self.dt * self.source_s(x_centers_prev_gr, self.x0, self.w, L)
-            fn += self.dt * self.source_f(x_centers_prev_gr, self.x0, self.w, L)
+                sn += self.dt * self.source_s(x_centers_prev_gr, self.x0, self.w, L)
+                fn += self.dt * self.source_f(x_centers_prev_gr, self.x0, self.w, L)
 
-            sn = refl_bound(sn,x_grid_prev_gr)
-            fn = refl_bound(fn,x_grid_prev_gr)
+                sn = refl_bound(sn,x_grid_prev_gr)
+                fn = refl_bound(fn,x_grid_prev_gr)
 
-            # Steady state at this L(t)
-            s_steady = steady_solution(x_centers_prev_gr, self.x0, self.lam, self.alpha, self.w, self.beta, self.D, L)
-            f_steady = steady_solution(x_centers_prev_gr, L - self.w - self.x0, self.lam, self.alpha, self.w, self.beta, self.D, L)
+                # Steady state at this L(t)
+                s_steady = steady_solution(x_centers_prev_gr, self.x0, self.lam, self.alpha, self.w, self.beta, self.D, L)
+                f_steady = steady_solution(x_centers_prev_gr, L - self.w - self.x0, self.lam, self.alpha, self.w, self.beta, self.D, L)
 
-            # Save for next time step
-            x_grid_prev = x_grid_prev_gr
-            s_prev = sn
-            f_prev = fn
+                # Save for next time step
+                x_grid_prev = x_grid_prev_gr
+                s_prev = sn
+                f_prev = fn
 
             # Update corresponding arrays
             if n in self.n_to_save:

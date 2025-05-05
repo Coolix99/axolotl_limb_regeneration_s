@@ -9,12 +9,12 @@ L0: 1.8
 small_number: 1e-06
 
 Space Parameters:
-ndx: 500
-dx: 0.0036
+ndx: 300
+dx: 0.006
 
 Time Parameters:
 tmax: 5
 dt: 5e-06
 t (array length): 1000001
 ndt: 1000001
-ndt_to_save: 1000
+ndt_to_save: 3000

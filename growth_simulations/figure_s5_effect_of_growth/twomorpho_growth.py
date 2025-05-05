@@ -22,7 +22,7 @@ def loop():
 
     small_number = 1e-6
 
-    ndx  = 500
+    ndx  = 300
     dx   = L0 / ndx
 
     tmax = 5
@@ -30,10 +30,11 @@ def loop():
     t    = np.arange(0, tmax + small_number, dt)
     ndt  = len(t)
 
-    ndt_to_save = min(1000,ndt)
+    ndt_to_save = min(3000,ndt)
     g_to_test = np.array([0.5, 1, 2, 3.5, 5]) * beta
+    g_to_test = np.array([0.5, 1, 5]) * beta
 
-    output_folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph_gmultiplicative/dynamics/'
+    output_folder = 'growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph/dynamics/'
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
     os.makedirs(output_folder)

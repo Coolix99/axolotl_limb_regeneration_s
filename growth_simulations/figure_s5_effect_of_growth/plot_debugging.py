@@ -50,4 +50,4 @@ def plot_morphogen_profiles(folder_path):
 
 
 
-plot_morphogen_profiles('growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph_gmultiplicative/dynamics/th_0.15_g_5.0')
+plot_morphogen_profiles('growth_simulations/figure_s5_effect_of_growth/results_of_numerics/two_morph/dynamics/th_0.2_g_0.5')
